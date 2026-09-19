@@ -1,0 +1,6 @@
+{
+  "name": "Recetas del Refrigerador",
+  "description": "Generador simple de recetas saludables bajas en carbohidratos, azúcar y sal, con alto contenido de proteínas y verduras frescas, y guardado de recetas favoritas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

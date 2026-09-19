@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recetas del Refrigerador | Cocina Saludable</title>
+  <meta name="description" content="Generador simple de recetas saludables bajas en carbohidratos, azúcar y sal, con alto contenido de proteínas y verduras frescas." />
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            serif: ['"Playfair Display"', 'Georgia', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: #FBFBF9;
+      color: #1c1917;
+    }
+    .font-serif {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    @media print {
+      header, nav, #ingredient-form-section, #preferences-bar, .no-print {
+        display: none !important;
+      }
+      body {
+        background: white !important;
+        color: black !important;
+      }
+      #recipe-display-area {
+        display: block !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-emerald-100 selection:text-emerald-900">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-stone-200/80">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          🥗
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-stone-900 leading-tight">
+            Recetas del Refrigerador
+          </h1>
+          <span class="text-[11px] text-emerald-800 font-medium hidden sm:inline-block">
+            Proteínas limpias & verduras frescas • Sin azúcar ni exceso de sal
+          </span>
+        </div>
+      </div>
+
+      <!-- Right actions: Navigation tabs and API Key Settings Button -->
+      <div class="flex items-center gap-2">
+        <nav class="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200/60">
+          <button
+            id="tab-btn-generator"
+            type="button"
+            onclick="switchTab('generator')"
+            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-stone-900 shadow-xs"
+          >
+            <span>🍳 Generar</span>
+          </button>
+          <button
+            id="tab-btn-favorites"
+            type="button"
+            onclick="switchTab('favorites')"
+            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-stone-600 hover:text-stone-900"
+          >
+            <span>❤️ Mis Favoritas</span>
+            <span id="favorites-badge" class="hidden px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-700 text-[10px] font-bold">0</span>
+          </button>
+        </nav>
+
+        <!-- Gemini API Key Settings Button (Gear / Key) -->
+        <button
+          id="btn-open-api-config"
+          type="button"
+          onclick="openApiModal()"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 transition-all border border-stone-200/80 text-xs font-semibold shrink-0"
+          title="Configuración de clave API de Gemini (⚙️ / 🔑)"
+        >
+          <span class="text-sm">⚙️</span>
+          <span class="hidden sm:inline">API Gemini</span>
+          <span id="api-status-dot" class="w-2 h-2 rounded-full bg-stone-400" title="Estado de la API"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- TAB 1: GENERATOR -->
+    <section id="view-generator" class="space-y-6">
+      
+      <!-- Nutritional Guidelines Banner -->
+      <div class="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-emerald-900">
+        <div class="flex items-center gap-2">
+          <span class="text-emerald-700 text-base">🛡️</span>
+          <span class="font-semibold">Pautas de tu receta personal:</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-[11px] font-medium text-emerald-800">
+          <span class="bg-white/80 px-2 py-0.5 rounded-md border border-emerald-200">🍗 Alta en Proteína</span>
+          <span class="bg-white/80 px-2 py-0.5 rounded-md border border-emerald-200">🥦 Verduras Frescas</span>
+          <span class="bg-white/80 px-2 py-0.5 rounded-md border border-emerald-200">🧂 Baja en Sal</span>
+          <span class="bg-white/80 px-2 py-0.5 rounded-md border border-emerald-200">🥑 Cero Azúcar / Low-Carb</span>
+        </div>
+      </div>
+
+      <!-- Ingredient Input Card -->
+      <div id="ingredient-form-section" class="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-semibold text-stone-900">¿Qué ingredientes tienes en tu refrigerador?</h2>
+            <p class="text-xs text-stone-500">Escribe o selecciona las proteínas y vegetales disponibles</p>
+          </div>
+          <button
+            id="clear-ingredients-btn"
+            type="button"
+            onclick="clearAllIngredients()"
+            class="text-xs text-stone-400 hover:text-red-500 transition-colors px-2 py-1 rounded hidden"
+          >
+            Limpiar lista
+          </button>
+        </div>
+
+        <!-- Custom ingredient input -->
+        <form onsubmit="handleAddCustomIngredient(event)" class="flex gap-2 mb-4">
+          <input
+            id="ingredient-input-text"
+            type="text"
+            placeholder="Escribe un ingrediente (ej: pechuga de pollo, coliflor, espinaca...)"
+            class="flex-1 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 transition-all text-stone-900 placeholder:text-stone-400"
+          />
+          <button
+            type="submit"
+            class="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-sm font-medium transition-colors shrink-0"
+          >
+            + Añadir
+          </button>
+        </form>
+
+        <!-- Selected Tags Area -->
+        <div class="mb-5">
+          <span class="text-xs font-medium text-stone-500 block mb-2">Ingredientes seleccionados:</span>
+          <div id="selected-tags-container" class="flex flex-wrap gap-2">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Quick suggestions from fridge -->
+        <div>
+          <span class="text-xs font-medium text-stone-500 block mb-2">Comunes en el refrigerador (toca para agregar):</span>
+          <div id="quick-suggestions-container" class="flex flex-wrap gap-1.5">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Meal Settings -->
+      <div id="preferences-bar" class="bg-white rounded-2xl p-5 border border-stone-200/80 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="grid grid-cols-2 gap-4 w-full sm:w-auto">
+          <div>
+            <label class="block text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-1">Momento del día</label>
+            <select id="select-meal-type" class="w-full text-xs sm:text-sm bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-600/30">
+              <option value="Cualquiera">Cualquiera (Automático)</option>
+              <option value="Desayuno nutritivo">Desayuno</option>
+              <option value="Almuerzo saludable">Almuerzo / Comida</option>
+              <option value="Cena ligera">Cena ligera</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-stone-500 uppercase tracking-wider mb-1">Tiempo disponible</label>
+            <select id="select-prep-time" class="w-full text-xs sm:text-sm bg-stone-50 border border-stone-200 rounded-xl px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-emerald-600/30">
+              <option value="Cualquiera">Sin prisa</option>
+              <option value="15 min">Rápido (~15 min)</option>
+              <option value="25 min">Estándar (~25 min)</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          id="btn-generate-recipe"
+          type="button"
+          onclick="generateHealthyRecipe()"
+          class="w-full sm:w-auto px-7 py-3 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2"
+        >
+          <span>✨ Crear Receta Saludable</span>
+        </button>
+      </div>
+
+      <!-- Recipe Output Area -->
+      <div id="recipe-display-area" class="hidden">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- TAB 2: FAVORITES -->
+    <section id="view-favorites" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 border border-stone-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-stone-900 font-serif">Mis Recetas Favoritas</h2>
+          <p class="text-xs text-stone-500">Tus platos saludables guardados para cocinar cuando quieras</p>
+        </div>
+        <div class="w-full sm:w-72">
+          <input
+            id="favorites-search-input"
+            type="text"
+            oninput="renderFavoritesList()"
+            placeholder="Buscar en favoritas..."
+            class="w-full px-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/30 text-stone-900 placeholder:text-stone-400"
+          />
+        </div>
+      </div>
+
+      <div id="favorites-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal: Gemini API Key Configuration (⚙️ / 🔑) -->
+  <div
+    id="modal-api-config"
+    class="fixed inset-0 z-50 bg-stone-950/60 backdrop-blur-xs flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-api-title"
+  >
+    <div
+      class="bg-white w-full max-w-lg rounded-2xl shadow-xl border border-stone-200 overflow-hidden transform scale-95 transition-transform duration-200"
+      id="modal-api-content"
+    >
+      <!-- Modal Header -->
+      <div class="px-6 py-5 border-b border-stone-100 flex items-center justify-between bg-stone-50/70">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center text-base">
+            🔑
+          </div>
+          <div>
+            <h3 id="modal-api-title" class="text-sm sm:text-base font-bold text-stone-900 leading-tight">
+              Configuración de API de Gemini
+            </h3>
+            <p class="text-[11px] text-stone-500">Conecta la IA de Google para crear tus recetas personalizadas</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onclick="closeApiModal()"
+          class="w-8 h-8 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-200/60 flex items-center justify-center transition-colors text-lg"
+          title="Cerrar ventana"
+        >
+          &times;
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-5">
+        
+        <!-- Status indicator -->
+        <div id="api-key-status-box" class="p-3 rounded-xl border text-xs flex items-start gap-2.5 bg-stone-50 border-stone-200 text-stone-700">
+          <span id="api-status-icon" class="text-sm mt-0.5">ℹ️</span>
+          <div class="flex-1">
+            <strong id="api-status-title" class="block font-semibold mb-0.5 text-stone-900">Estado de la clave:</strong>
+            <span id="api-status-desc" class="text-[11px] leading-relaxed text-stone-600">No hay clave guardada. La app está funcionando con el motor saludable local.</span>
+          </div>
+        </div>
+
+        <!-- Input Form -->
+        <div class="space-y-2">
+          <label for="gemini-api-key-input" class="block text-xs font-semibold text-stone-800">
+            Ingresa tu API Key de Gemini:
+          </label>
+          <div class="relative flex items-center">
+            <input
+              id="gemini-api-key-input"
+              type="password"
+              placeholder="AIzaSy..."
+              autocomplete="off"
+              spellcheck="false"
+              class="w-full pl-3.5 pr-10 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600 font-mono tracking-wide placeholder:font-sans placeholder:tracking-normal placeholder:text-stone-400"
+            />
+            <button
+              id="toggle-key-visibility-btn"
+              type="button"
+              onclick="toggleApiKeyVisibility()"
+              class="absolute right-2.5 text-stone-400 hover:text-stone-700 p-1 text-xs transition-colors"
+              title="Mostrar u ocultar clave"
+            >
+              👁️
+            </button>
+          </div>
+          <p class="text-[10px] text-stone-400">
+            La clave se guarda de forma segura en el almacenamiento local de tu navegador (<code class="bg-stone-100 px-1 py-0.5 rounded text-stone-600">localStorage</code>) y no se comparte con ningún tercero.
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <button
+            id="btn-save-api-key"
+            type="button"
+            onclick="handleSaveApiKey()"
+            class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5"
+          >
+            <span>💾 Guardar clave</span>
+          </button>
+          <button
+            id="btn-test-api-key"
+            type="button"
+            onclick="handleTestApiKey()"
+            class="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl text-xs font-medium transition-colors flex items-center gap-1.5 border border-stone-200"
+          >
+            <span>🧪 Probar conexión</span>
+          </button>
+          <button
+            id="btn-delete-api-key"
+            type="button"
+            onclick="handleDeleteApiKey()"
+            class="px-3.5 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-medium transition-colors hidden ml-auto"
+          >
+            🗑️ Borrar clave
+          </button>
+        </div>
+
+        <!-- Step by Step Help Box (as explicitly requested) -->
+        <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 text-xs text-amber-950 space-y-2">
+          <div class="flex items-center gap-2 font-bold text-amber-900">
+            <span>📖</span>
+            <h4>Instrucciones paso a paso para obtenerla:</h4>
+          </div>
+          <ol class="list-decimal list-inside space-y-1.5 text-[11px] text-amber-900/90 leading-relaxed font-normal pl-0.5">
+            <li>
+              Entrar a <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer" class="font-semibold underline text-amber-900 hover:text-amber-950">aistudio.google.com</a>.
+            </li>
+            <li>Iniciar sesión con tu cuenta de Google.</li>
+            <li>Hacer clic en la opción <strong>Get API key</strong> en el menú.</li>
+            <li>Presionar <strong>Create API key</strong> y copiar el código generado.</li>
+          </ol>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3.5 border-t border-stone-100 bg-stone-50 flex items-center justify-end">
+        <button
+          type="button"
+          onclick="closeApiModal()"
+          class="px-4 py-2 bg-stone-200 hover:bg-stone-300 text-stone-800 rounded-xl text-xs font-semibold transition-colors"
+        >
+          Cerrar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast-message" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-stone-900 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium flex items-center gap-2 pointer-events-none">
+    <span id="toast-text">Notificación</span>
+  </div>
+
+  <!-- SINGLE FILE JAVASCRIPT LOGIC -->
+  <script>
+    // State
+    const STORAGE_KEY_FAVS = "refrige_recipes_favorites_v1";
+    const STORAGE_KEY_INGS = "refrige_recipes_ingredients_v1";
+    const STORAGE_KEY_GEMINI_KEY = "refrige_recipes_gemini_api_key_v1";
+
+    const COMMON_INGREDIENTS = [
+      "Pechuga de pollo", "Huevos", "Espinacas", "Tomates",
+      "Calabacín / Zucchini", "Brócoli", "Cebolla", "Pimiento",
+      "Atún", "Champiñones", "Aguacate", "Zanahoria",
+      "Carne magra", "Queso fresco / Panela"
+    ];
+
+    let userIngredients = ["Pechuga de pollo", "Huevos", "Espinacas", "Tomates"];
+    let favoriteRecipes = [];
+    let currentRecipe = null;
+    let checkedIngredientsMap = {};
+    let checkedStepsMap = {};
+
+    // Initialize
+    document.addEventListener("DOMContentLoaded", () => {
+      // Load stored ingredients
+      try {
+        const savedIngs = localStorage.getItem(STORAGE_KEY_INGS);
+        if (savedIngs) {
+          const parsed = JSON.parse(savedIngs);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            userIngredients = parsed;
+          }
+        }
+      } catch (e) {}
+
+      // Load favorites
+      try {
+        const savedFavs = localStorage.getItem(STORAGE_KEY_FAVS);
+        if (savedFavs) {
+          favoriteRecipes = JSON.parse(savedFavs);
+        }
+      } catch (e) {}
+
+      updateFavoritesBadge();
+      renderSelectedTags();
+      renderQuickSuggestions();
+      updateApiStatusIndicator();
+    });
+
+    // --- Gemini API Key Configuration & Modal Logic ---
+    function updateApiStatusIndicator() {
+      const dot = document.getElementById("api-status-dot");
+      const savedKey = (localStorage.getItem(STORAGE_KEY_GEMINI_KEY) || "").trim();
+      if (dot) {
+        if (savedKey) {
+          dot.className = "w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-200 shadow-xs";
+          dot.title = "Clave de Gemini activa";
+        } else {
+          dot.className = "w-2 h-2 rounded-full bg-stone-400";
+          dot.title = "Sin clave de API (usando motor local)";
+        }
+      }
+    }
+
+    function openApiModal() {
+      const modal = document.getElementById("modal-api-config");
+      const content = document.getElementById("modal-api-content");
+      const input = document.getElementById("gemini-api-key-input");
+      if (!modal) return;
+
+      const savedKey = localStorage.getItem(STORAGE_KEY_GEMINI_KEY) || "";
+      if (input) {
+        input.value = savedKey;
+        input.type = "password";
+      }
+
+      const toggleBtn = document.getElementById("toggle-key-visibility-btn");
+      if (toggleBtn) toggleBtn.textContent = "👁️";
+
+      refreshModalStatusUi(savedKey);
+
+      modal.classList.remove("hidden");
+      // Trigger smooth entry transition
+      setTimeout(() => {
+        modal.classList.remove("opacity-0");
+        if (content) content.classList.remove("scale-95");
+      }, 10);
+    }
+
+    function closeApiModal() {
+      const modal = document.getElementById("modal-api-config");
+      const content = document.getElementById("modal-api-content");
+      if (!modal) return;
+
+      modal.classList.add("opacity-0");
+      if (content) content.classList.add("scale-95");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 200);
+    }
+
+    function toggleApiKeyVisibility() {
+      const input = document.getElementById("gemini-api-key-input");
+      const toggleBtn = document.getElementById("toggle-key-visibility-btn");
+      if (!input) return;
+      if (input.type === "password") {
+        input.type = "text";
+        if (toggleBtn) toggleBtn.textContent = "🙈";
+      } else {
+        input.type = "password";
+        if (toggleBtn) toggleBtn.textContent = "👁️";
+      }
+    }
+
+    function refreshModalStatusUi(savedKey) {
+      const statusBox = document.getElementById("api-key-status-box");
+      const statusIcon = document.getElementById("api-status-icon");
+      const statusTitle = document.getElementById("api-status-title");
+      const statusDesc = document.getElementById("api-status-desc");
+      const deleteBtn = document.getElementById("btn-delete-api-key");
+
+      if (savedKey && savedKey.trim().length > 0) {
+        if (statusBox) {
+          statusBox.className = "p-3 rounded-xl border text-xs flex items-start gap-2.5 bg-emerald-50 border-emerald-200 text-emerald-900";
+        }
+        if (statusIcon) statusIcon.textContent = "✅";
+        if (statusTitle) statusTitle.textContent = "Clave de API activa y guardada:";
+        if (statusDesc) {
+          const masked = savedKey.slice(0, 6) + "••••••••" + savedKey.slice(-4);
+          statusDesc.textContent = `Tu clave (${masked}) está vinculada localmente. Gemini generará recetas inteligentes para ti.`;
+        }
+        if (deleteBtn) deleteBtn.classList.remove("hidden");
+      } else {
+        if (statusBox) {
+          statusBox.className = "p-3 rounded-xl border text-xs flex items-start gap-2.5 bg-stone-50 border-stone-200 text-stone-700";
+        }
+        if (statusIcon) statusIcon.textContent = "ℹ️";
+        if (statusTitle) statusTitle.textContent = "Estado de la clave:";
+        if (statusDesc) statusDesc.textContent = "No hay clave guardada en el navegador. La aplicación funcionará con el motor saludable local autónomo.";
+        if (deleteBtn) deleteBtn.classList.add("hidden");
+      }
+    }
+
+    function handleSaveApiKey() {
+      const input = document.getElementById("gemini-api-key-input");
+      const val = input ? input.value.trim() : "";
+
+      if (!val) {
+        showToast("Por favor ingresa una clave válida");
+        return;
+      }
+
+      try {
+        localStorage.setItem(STORAGE_KEY_GEMINI_KEY, val);
+        updateApiStatusIndicator();
+        refreshModalStatusUi(val);
+        showToast("¡Clave de Gemini API guardada en tu navegador!");
+      } catch (e) {
+        showToast("Error al guardar la clave en localStorage");
+      }
+    }
+
+    function handleDeleteApiKey() {
+      try {
+        localStorage.removeItem(STORAGE_KEY_GEMINI_KEY);
+        const input = document.getElementById("gemini-api-key-input");
+        if (input) input.value = "";
+        updateApiStatusIndicator();
+        refreshModalStatusUi("");
+        showToast("Clave eliminada. Se usará el motor local.");
+      } catch (e) {
+        showToast("Error al borrar la clave");
+      }
+    }
+
+    async function handleTestApiKey() {
+      const input = document.getElementById("gemini-api-key-input");
+      const key = input ? input.value.trim() : "";
+      if (!key) {
+        showToast("Ingresa primero una clave en el campo de texto");
+        return;
+      }
+
+      const testBtn = document.getElementById("btn-test-api-key");
+      const origText = testBtn ? testBtn.innerHTML : "";
+      if (testBtn) {
+        testBtn.disabled = true;
+        testBtn.innerHTML = `<span>⏳ Verificando...</span>`;
+      }
+
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: "Hola, responde brevemente: OK" }] }]
+          })
+        });
+
+        if (res.ok) {
+          showToast("¡Conexión exitosa! La clave es válida y funciona perfectamente");
+          refreshModalStatusUi(key);
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData?.error?.message || `Código HTTP ${res.status}`;
+          showToast(`Error al validar: ${errMsg}`);
+        }
+      } catch (err) {
+        showToast("Error de red al contactar Google AI Studio: " + err.message);
+      } finally {
+        if (testBtn) {
+          testBtn.disabled = false;
+          testBtn.innerHTML = origText;
+        }
+      }
+    }
+
+    function saveIngredientsToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY_INGS, JSON.stringify(userIngredients));
+      } catch (e) {}
+    }
+
+    function saveFavoritesToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY_FAVS, JSON.stringify(favoriteRecipes));
+      } catch (e) {}
+      updateFavoritesBadge();
+    }
+
+    function updateFavoritesBadge() {
+      const badge = document.getElementById("favorites-badge");
+      if (badge) {
+        if (favoriteRecipes.length > 0) {
+          badge.textContent = favoriteRecipes.length;
+          badge.classList.remove("hidden");
+        } else {
+          badge.classList.add("hidden");
+        }
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast-message");
+      const text = document.getElementById("toast-text");
+      if (toast && text) {
+        text.textContent = message;
+        toast.classList.remove("translate-y-20", "opacity-0");
+        setTimeout(() => {
+          toast.classList.add("translate-y-20", "opacity-0");
+        }, 2400);
+      }
+    }
+
+    // Tabs switching
+    function switchTab(tab) {
+      const viewGen = document.getElementById("view-generator");
+      const viewFav = document.getElementById("view-favorites");
+      const btnGen = document.getElementById("tab-btn-generator");
+      const btnFav = document.getElementById("tab-btn-favorites");
+
+      if (tab === "generator") {
+        viewGen.classList.remove("hidden");
+        viewFav.classList.add("hidden");
+        btnGen.className = "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-stone-900 shadow-xs";
+        btnFav.className = "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-stone-600 hover:text-stone-900";
+      } else {
+        viewGen.classList.add("hidden");
+        viewFav.classList.remove("hidden");
+        btnFav.className = "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-stone-900 shadow-xs";
+        btnGen.className = "flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-stone-600 hover:text-stone-900";
+        renderFavoritesList();
+      }
+    }
+
+    // Ingredient management
+    function renderSelectedTags() {
+      const container = document.getElementById("selected-tags-container");
+      const clearBtn = document.getElementById("clear-ingredients-btn");
+
+      if (!container) return;
+
+      if (userIngredients.length > 0) {
+        clearBtn.classList.remove("hidden");
+        container.innerHTML = userIngredients.map(item => `
+          <span class="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm font-medium rounded-lg">
+            <span>${escapeHtml(item)}</span>
+            <button type="button" onclick="removeIngredient('${escapeHtml(item)}')" class="w-4 h-4 rounded hover:bg-emerald-200/60 text-emerald-700 flex items-center justify-center transition-colors">
+              &times;
+            </button>
+          </span>
+        `).join("");
+      } else {
+        clearBtn.classList.add("hidden");
+        container.innerHTML = `<span class="text-xs text-stone-400 italic">No has agregado ingredientes todavía. Agrega algunos abajo.</span>`;
+      }
+      renderQuickSuggestions();
+      saveIngredientsToStorage();
+    }
+
+    function renderQuickSuggestions() {
+      const container = document.getElementById("quick-suggestions-container");
+      if (!container) return;
+
+      container.innerHTML = COMMON_INGREDIENTS.map(item => {
+        const isSelected = userIngredients.some(i => i.toLowerCase() === item.toLowerCase());
+        return `
+          <button
+            type="button"
+            onclick="toggleQuickIngredient('${escapeHtml(item)}')"
+            class="text-xs px-2.5 py-1 rounded-lg border transition-all ${
+              isSelected
+                ? 'bg-emerald-600 border-emerald-600 text-white font-medium shadow-xs'
+                : 'bg-stone-50 border-stone-200 text-stone-700 hover:bg-stone-100 hover:border-stone-300'
+            }"
+          >
+            ${isSelected ? '✓ ' : '+ '} ${item}
+          </button>
+        `;
+      }).join("");
+    }
+
+    function handleAddCustomIngredient(e) {
+      e.preventDefault();
+      const input = document.getElementById("ingredient-input-text");
+      const value = input.value.trim();
+      if (!value) return;
+
+      if (value.includes(",")) {
+        value.split(",").map(s => s.trim()).filter(Boolean).forEach(addIngredient);
+      } else {
+        addIngredient(value);
+      }
+      input.value = "";
+    }
+
+    function addIngredient(item) {
+      if (!item) return;
+      if (!userIngredients.some(i => i.toLowerCase() === item.toLowerCase())) {
+        userIngredients.push(item);
+        renderSelectedTags();
+      }
+    }
+
+    function removeIngredient(item) {
+      userIngredients = userIngredients.filter(i => i.toLowerCase() !== item.toLowerCase());
+      renderSelectedTags();
+    }
+
+    function toggleQuickIngredient(item) {
+      if (userIngredients.some(i => i.toLowerCase() === item.toLowerCase())) {
+        removeIngredient(item);
+      } else {
+        addIngredient(item);
+      }
+    }
+
+    function clearAllIngredients() {
+      userIngredients = [];
+      renderSelectedTags();
+    }
+
+    // Direct Gemini AI Recipe Generation Engine
+    async function callGeminiApiDirectly(apiKey, ingredients, mealType, prepTimePref) {
+      const prompt = `Actúa como un chef profesional y nutricionista clínico especializado en cocina saludable. 
+Crea una receta culinaria deliciosa, práctica y saciante utilizando de forma destacada los siguientes ingredientes que el usuario tiene disponibles en su refrigerador: ${ingredients.join(", ")}.
+
+MOMENTO DEL DÍA O PREFERENCIA: ${mealType || "Cualquiera"}.
+TIEMPO ESTIMADO DISPONIBLE: ${prepTimePref || "20-25 minutos"}.
+
+REGLAS NUTRICIONALES ESTRICTAS E INQUEBRANTABLES:
+1. CERO AZÚCAR AÑADIDO: No utilices azúcar, miel, jarabes ni edulcorantes calóricos.
+2. MUY BAJA EN SAL / SODIO: No agregues sal de mesa común; resalta el sabor usando ajo, cebolla, hierbas aromáticas frescas o secas, pimienta negra, limón fresco, vinagre balsámico/manzana o especias naturales.
+3. MUY BAJA EN CARBOHIDRATOS (Low-Carb): No incluyas panes, harinas refinadas, arroz blanco ni pastas.
+4. ALTA DENSIDAD NUTRICIONAL: Prioriza fuentes de proteína magra y volumen abundante de verduras frescas.
+
+Debes responder ÚNICAMENTE con un objeto JSON válido (sin explicaciones previas ni bloques de texto adicionales) con exactamente esta estructura:
+{
+  "title": "Nombre apetitoso y específico del plato",
+  "prepTime": "ej. 20 minutos",
+  "servings": "1-2 porciones",
+  "difficulty": "Fácil",
+  "summary": "Breve descripción apetitosa destacando por qué es saludable y saciante (1-2 frases)",
+  "ingredientsUsed": ["lista de ingredientes principales del refrigerador con cantidades claras"],
+  "pantryItems": ["elementos básicos necesarios como aceite de oliva virgen extra, ajo, limón, pimienta, hierbas aromáticas"],
+  "instructions": ["Paso 1 detallado de preparación", "Paso 2...", "Paso 3...", "Paso 4..."],
+  "nutritionHighlights": {
+    "proteinInfo": "Aporte proteico estimado y cómo apoya la masa muscular y saciedad",
+    "carbsSugarInfo": "Cero azúcares añadidos y carbohidratos netos muy bajos provenientes solo de vegetales",
+    "sodiumInfo": "Cómo se logra un sabor intenso y delicioso sin necesidad de agregar sal común"
+  },
+  "chefTip": "Consejo culinario del chef para elevar el plato al máximo sin sal ni azúcar"
+}`;
+
+      const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
+      let lastErr = null;
+
+      for (const model of models) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.3,
+                responseMimeType: "application/json"
+              }
+            })
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            const msg = errData?.error?.message || `HTTP ${res.status}`;
+            lastErr = new Error(msg);
+            continue;
+          }
+
+          const data = await res.json();
+          const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!rawText) throw new Error("Respuesta vacía de Gemini");
+
+          let cleaned = rawText.trim();
+          if (cleaned.startsWith("```json")) {
+            cleaned = cleaned.replace(/^```json\s*/, "").replace(/\s*```$/, "");
+          } else if (cleaned.startsWith("```")) {
+            cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
+          }
+
+          const parsed = JSON.parse(cleaned);
+          parsed.id = "rec-gemini-" + Date.now();
+          parsed.source = "gemini";
+          parsed.createdAt = Date.now();
+          return parsed;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+
+      throw lastErr || new Error("No se pudo obtener respuesta de la API de Gemini");
+    }
+
+    // Comprehensive Health-Focused Recipe Generator Engine
+    async function generateHealthyRecipe() {
+      if (userIngredients.length === 0) {
+        showToast("Agrega al menos un ingrediente del refrigerador");
+        return;
+      }
+
+      const mealType = document.getElementById("select-meal-type").value;
+      const prepTimePref = document.getElementById("select-prep-time").value;
+      const genBtn = document.getElementById("btn-generate-recipe");
+      const origText = genBtn ? genBtn.innerHTML : "";
+
+      const savedApiKey = (localStorage.getItem(STORAGE_KEY_GEMINI_KEY) || "").trim();
+
+      if (genBtn) {
+        genBtn.disabled = true;
+        genBtn.innerHTML = savedApiKey 
+          ? `<span>✨ Creando con Gemini AI...</span>` 
+          : `<span>⏳ Creando receta saludable...</span>`;
+      }
+
+      let recipeResult = null;
+      let usedGemini = false;
+
+      // 1. Priority: If user provided a Gemini API Key in Settings, use it directly!
+      if (savedApiKey) {
+        try {
+          recipeResult = await callGeminiApiDirectly(savedApiKey, userIngredients, mealType, prepTimePref);
+          usedGemini = true;
+        } catch (apiErr) {
+          showToast(`Aviso API: ${apiErr.message}. Usando motor culinario local.`);
+        }
+      }
+
+      // 2. If no direct key or API call failed, try backend proxy if served over HTTP/HTTPS
+      if (!recipeResult && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 6000);
+          const res = await fetch("/api/generate-recipe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ingredients: userIngredients,
+              mealType: mealType !== "Cualquiera" ? mealType : undefined,
+              timeAvailable: prepTimePref !== "Cualquiera" ? prepTimePref : undefined
+            }),
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.recipe) {
+              recipeResult = data.recipe;
+              usedGemini = true;
+            }
+          }
+        } catch (e) {
+          // Silent fallback to local culinary engine
+        }
+      }
+
+      // 3. Fallback to high-quality local culinary engine (works offline and on file://)
+      if (!recipeResult) {
+        recipeResult = generateRecipeLocally(userIngredients, mealType, prepTimePref);
+        recipeResult.source = "local";
+      }
+
+      currentRecipe = recipeResult;
+      checkedIngredientsMap = {};
+      checkedStepsMap = {};
+      renderRecipeCard(currentRecipe);
+
+      if (genBtn) {
+        genBtn.disabled = false;
+        genBtn.innerHTML = origText;
+      }
+
+      // Scroll to result
+      document.getElementById("recipe-display-area")?.scrollIntoView({ behavior: "smooth" });
+      if (usedGemini) {
+        showToast("¡Receta generada con éxito usando Gemini AI! ✨");
+      } else {
+        showToast("¡Receta saludable lista con motor culinario local! 🥗");
+      }
+    }
+
+    function generateRecipeLocally(ingredients, mealType, prepTimePref) {
+      // Identify protein candidates
+      const proteinsList = ["pollo", "pechuga", "huevo", "huevos", "atun", "atún", "salmon", "salmón", "pescado", "carne", "res", "pavo", "tofu", "queso fresco", "panela", "ricotta", "lentejas", "garbanzos", "camarones"];
+      const vegList = ["espinaca", "espinacas", "brocoli", "brócoli", "calabacin", "calabacín", "zucchini", "tomate", "tomates", "cebolla", "pimiento", "pimientos", "champinon", "champiñones", "aguacate", "zanahoria", "pepino", "coliflor", "esparragos", "espárragos", "berenjena"];
+
+      const foundProteins = ingredients.filter(i => proteinsList.some(p => i.toLowerCase().includes(p)));
+      const foundVegetables = ingredients.filter(i => vegList.some(v => i.toLowerCase().includes(v)));
+      const otherIngredients = ingredients.filter(i => !foundProteins.includes(i) && !foundVegetables.includes(i));
+
+      // Culinary construction
+      let mainProtein = foundProteins.length > 0 ? foundProteins[0] : (ingredients[0] || "Proteína del refrigerador");
+      let secondaryProtein = foundProteins.length > 1 ? foundProteins[1] : null;
+      let primaryVeg = foundVegetables.length > 0 ? foundVegetables.slice(0, 3) : ingredients.slice(1, 4);
+
+      // Recipe Title Styles
+      const cookingStyles = [
+        {
+          name: "Salteado Dorado al Ajo y Hierbas",
+          technique: "al sartén con sellado a fuego vivo para conservar nutrientes",
+          tip: "Cocina las verduras al dente (3-4 minutos) para preservar su textura crujiente y su clorofila natural."
+        },
+        {
+          name: "Wok Rústico de Sartén a las Hierbas Finas",
+          technique: "salteado rápido sin exceso de grasas",
+          tip: "Utiliza ajo laminado dorado al inicio y un chorrito de jugo de limón al apagar el fuego para dar frescura sin sal."
+        },
+        {
+          name: "Cazuela Ligera en Papillote con Aromáticos",
+          technique: "cocción en vapor cerrado que concentra todos los jugos",
+          tip: "El orégano seco y la pimienta negra recién molida engañan agradablemente al paladar reduciendo la necesidad de sodio."
+        },
+        {
+          name: "Sartén Rápida y Ensalada Tibia Proteica",
+          technique: "combinación de temperatura tibia con verduras crujientes",
+          tip: "El vinagre de manzana o limón añade un balance ácido perfecto que reemplaza el azúcar y resalta el sabor natural."
+        }
+      ];
+
+      const style = cookingStyles[Math.floor(Math.random() * cookingStyles.length)];
+      const vegNames = primaryVeg.length > 0 ? primaryVeg.join(" y ") : "verduras frescas";
+      const title = `${capitalize(mainProtein)} ${style.name} con ${capitalize(vegNames)}`;
+
+      // Times
+      const time = prepTimePref && prepTimePref !== "Cualquiera" ? prepTimePref : "20 minutos";
+
+      // Ingredients with culinary measurements
+      const ingredientsUsed = [];
+      ingredientsUsed.push(`250g de ${mainProtein.toLowerCase()} (fuente de proteína magra)`);
+      if (secondaryProtein) {
+        ingredientsUsed.push(`1 porción de ${secondaryProtein.toLowerCase()}`);
+      }
+      primaryVeg.forEach(v => {
+        ingredientsUsed.push(`1 taza abundante de ${v.toLowerCase()} fresca, troceada`);
+      });
+      otherIngredients.forEach(o => {
+        ingredientsUsed.push(`1 porción de ${o.toLowerCase()}`);
+      });
+
+      // Pantry
+      const pantryItems = [
+        "1 cucharada de aceite de oliva virgen extra",
+        "2 dientes de ajo laminados finamente",
+        "Pimienta negra recién molida",
+        "Orégano seco, romero o tomillo",
+        "Jugo de 1/2 limón fresco para realzar sabor sin sodio"
+      ];
+
+      // Instructions
+      const instructions = [
+        `Lava y prepara ${ingredients.join(", ").toLowerCase()}. Trocea las verduras uniformemente.`,
+        `Corta ${mainProtein.toLowerCase()} en dados o fajitas y condimenta con pimienta negra, ajo y orégano.`,
+        `En una sartén amplia, añade el aceite de oliva a fuego medio-alto y dora el ajo rápidamente.`,
+        `Incorpora ${mainProtein.toLowerCase()} y sella de 4 a 6 minutos hasta que esté dorado y jugoso.`,
+        `Agrega las verduras (${vegNames}) y saltea a fuego alto por 4 minutos conservando su textura crocante.`,
+        `Apaga el fuego y rocía el jugo de limón fresco. La combinación de hierbas y ácido cítrico potencia el sabor sin necesidad de sal ni azúcar.`,
+        `Sirve caliente disfrutando de un plato con alta densidad nutricional y saciedad.`
+      ];
+
+      const nutritionHighlights = {
+        proteinInfo: `Alta en proteína: aporta entre 30g y 40g de proteína magra gracias a ${mainProtein}.`,
+        carbsSugarInfo: `Cero azúcar añadido y carbohidratos netos muy bajos provenientes exclusivamente de vegetales frescos.`,
+        sodiumInfo: `Baja en sal: sazón lograda mediante sellado al calor, hierbas aromáticas, pimienta y limón.`
+      };
+
+      return {
+        id: "rec-" + Date.now() + "-" + Math.random().toString(36).substring(2, 6),
+        title,
+        prepTime: time,
+        servings: "1-2 porciones",
+        difficulty: "Fácil",
+        summary: `Plato casero diseñado con los ingredientes de tu refrigerador. Prioriza proteína y verduras frescas, manteniendo carbohidratos, azúcar y sal en el mínimo.`,
+        ingredientsUsed,
+        pantryItems,
+        instructions,
+        nutritionHighlights,
+        chefTip: style.tip,
+        createdAt: Date.now()
+      };
+    }
+
+    function renderRecipeCard(recipe) {
+      const container = document.getElementById("recipe-display-area");
+      if (!container) return;
+
+      const isFav = favoriteRecipes.some(f => f.id === recipe.id);
+
+      container.innerHTML = `
+        <article class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden transition-all mt-4">
+          
+          <!-- Top Header Banner -->
+          <div class="bg-stone-900 text-stone-100 p-6 sm:p-8">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  recipe.source === 'gemini' 
+                    ? 'bg-purple-500/25 text-purple-200 border border-purple-400/40' 
+                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                }">
+                  ${recipe.source === 'gemini' ? '✨ Gemini AI' : '🥗 Motor Culinario Local'}
+                </span>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Alta en Proteínas
+                </span>
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                  Cero Azúcar & Baja en Sal
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  onclick="toggleFavoriteCurrent()"
+                  class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                    isFav
+                      ? 'bg-rose-500 text-white shadow-xs hover:bg-rose-600'
+                      : 'bg-stone-800 text-stone-200 hover:bg-stone-700 border border-stone-700'
+                  }"
+                >
+                  <span>${isFav ? '❤️ Guardada en favoritas' : '🤍 Guardar favorita'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onclick="copyRecipeText()"
+                  class="p-1.5 bg-stone-800 text-stone-200 hover:bg-stone-700 border border-stone-700 rounded-xl text-xs transition-colors"
+                  title="Copiar receta"
+                >
+                  📋
+                </button>
+                <button
+                  type="button"
+                  onclick="window.print()"
+                  class="p-1.5 bg-stone-800 text-stone-200 hover:bg-stone-700 border border-stone-700 rounded-xl text-xs transition-colors"
+                  title="Imprimir receta"
+                >
+                  🖨️
+                </button>
+              </div>
+            </div>
+
+            <h2 class="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-2 font-serif">
+              ${escapeHtml(recipe.title)}
+            </h2>
+
+            <p class="text-stone-300 text-sm leading-relaxed mb-6 max-w-2xl">
+              ${escapeHtml(recipe.summary)}
+            </p>
+
+            <div class="flex flex-wrap items-center gap-4 text-xs text-stone-300 pt-4 border-t border-stone-800">
+              <div>⏱ Tiempo: <strong class="text-white font-medium">${recipe.prepTime}</strong></div>
+              <div>👥 Porciones: <strong class="text-white font-medium">${recipe.servings}</strong></div>
+              <div>🔥 Dificultad: <strong class="text-white font-medium">${recipe.difficulty}</strong></div>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="p-6 sm:p-8 space-y-6">
+
+            <!-- Nutrition 3-box highlights -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-100">
+                <span class="text-xs font-bold text-emerald-900 uppercase tracking-wider block mb-1">🍗 Proteína</span>
+                <p class="text-xs text-emerald-800 leading-relaxed">${escapeHtml(recipe.nutritionHighlights.proteinInfo)}</p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-100">
+                <span class="text-xs font-bold text-amber-900 uppercase tracking-wider block mb-1">🥦 Carbohidratos & Azúcar</span>
+                <p class="text-xs text-amber-800 leading-relaxed">${escapeHtml(recipe.nutritionHighlights.carbsSugarInfo)}</p>
+              </div>
+              <div class="p-3.5 rounded-xl bg-stone-100 border border-stone-200">
+                <span class="text-xs font-bold text-stone-800 uppercase tracking-wider block mb-1">🌿 Sabor Sin Sal Añadida</span>
+                <p class="text-xs text-stone-700 leading-relaxed">${escapeHtml(recipe.nutritionHighlights.sodiumInfo)}</p>
+              </div>
+            </div>
+
+            <!-- Two Columns -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-2">
+              
+              <!-- Ingredients List -->
+              <div class="lg:col-span-5 space-y-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-bold text-stone-900">Ingredientes Requeridos</h3>
+                  <span class="text-[11px] text-stone-400">Toca para tachar</span>
+                </div>
+
+                <ul class="space-y-1.5">
+                  ${recipe.ingredientsUsed.map((ing, idx) => `
+                    <li
+                      onclick="toggleCheckIngredient(${idx})"
+                      class="flex items-start gap-2.5 p-2 rounded-lg cursor-pointer transition-colors ${checkedIngredientsMap[idx] ? 'bg-stone-50 text-stone-400 line-through' : 'hover:bg-emerald-50/50 text-stone-800'}"
+                    >
+                      <input type="checkbox" ${checkedIngredientsMap[idx] ? 'checked' : ''} class="mt-0.5 pointer-events-none rounded text-emerald-600" />
+                      <span class="text-xs sm:text-sm font-medium">${escapeHtml(ing)}</span>
+                    </li>
+                  `).join("")}
+                </ul>
+
+                <div class="pt-3 border-t border-stone-100">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-stone-500 block mb-2">Básicos de Despensa</span>
+                  <ul class="space-y-1">
+                    ${recipe.pantryItems.map(p => `
+                      <li class="text-xs text-stone-600 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full bg-stone-300"></span>
+                        <span>${escapeHtml(p)}</span>
+                      </li>
+                    `).join("")}
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Steps List -->
+              <div class="lg:col-span-7 space-y-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-sm font-bold text-stone-900">Pasos de Preparación</h3>
+                  <span class="text-[11px] text-stone-400">Sigue el paso a paso</span>
+                </div>
+
+                <ol class="space-y-2.5">
+                  ${recipe.instructions.map((step, sIdx) => `
+                    <li
+                      onclick="toggleCheckStep(${sIdx})"
+                      class="flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                        checkedStepsMap[sIdx]
+                          ? 'bg-stone-50 border-stone-200 text-stone-400'
+                          : 'bg-white border-stone-200 hover:border-stone-300 text-stone-800 shadow-xs'
+                      }"
+                    >
+                      <div class="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                        checkedStepsMap[sIdx] ? 'bg-stone-200 text-stone-500' : 'bg-emerald-600 text-white'
+                      }">
+                        ${checkedStepsMap[sIdx] ? '✓' : (sIdx + 1)}
+                      </div>
+                      <p class="text-xs sm:text-sm leading-relaxed pt-0.5 ${checkedStepsMap[sIdx] ? 'line-through' : ''}">${escapeHtml(step)}</p>
+                    </li>
+                  `).join("")}
+                </ol>
+              </div>
+
+            </div>
+
+            <!-- Chef Sazón Tip -->
+            <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 flex items-start gap-3 text-amber-950">
+              <span class="text-lg mt-0.5">💡</span>
+              <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-amber-900 mb-0.5">Consejo del Chef para Sazonar</h4>
+                <p class="text-xs text-amber-900/90 leading-relaxed">${escapeHtml(recipe.chefTip)}</p>
+              </div>
+            </div>
+
+            <!-- Bottom buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-stone-200">
+              <button
+                type="button"
+                onclick="toggleFavoriteCurrent()"
+                class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                  isFav
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                    : 'bg-stone-100 hover:bg-stone-200 text-stone-800'
+                }"
+              >
+                ${isFav ? '❤️ En Favoritas' : '🤍 Guardar en Mis Favoritas'}
+              </button>
+
+              <button
+                type="button"
+                onclick="generateHealthyRecipe()"
+                class="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition-colors"
+              >
+                🔄 Probar otra idea con estos ingredientes
+              </button>
+            </div>
+
+          </div>
+        </article>
+      `;
+
+      container.classList.remove("hidden");
+    }
+
+    function toggleCheckIngredient(idx) {
+      checkedIngredientsMap[idx] = !checkedIngredientsMap[idx];
+      if (currentRecipe) renderRecipeCard(currentRecipe);
+    }
+
+    function toggleCheckStep(idx) {
+      checkedStepsMap[idx] = !checkedStepsMap[idx];
+      if (currentRecipe) renderRecipeCard(currentRecipe);
+    }
+
+    function toggleFavoriteCurrent() {
+      if (!currentRecipe) return;
+      const index = favoriteRecipes.findIndex(f => f.id === currentRecipe.id);
+      if (index > -1) {
+        favoriteRecipes.splice(index, 1);
+        showToast("Eliminada de favoritas");
+      } else {
+        favoriteRecipes.unshift(currentRecipe);
+        showToast("¡Receta guardada en tus favoritas!");
+      }
+      saveFavoritesToStorage();
+      renderRecipeCard(currentRecipe);
+    }
+
+    function copyRecipeText() {
+      if (!currentRecipe) return;
+      const r = currentRecipe;
+      const text = `🥗 ${r.title}
+⏱ Tiempo: ${r.prepTime} | 👥 Porciones: ${r.servings}
+
+${r.summary}
+
+📝 INGREDIENTES:
+${r.ingredientsUsed.map(i => `• ${i}`).join("\n")}
+
+🧂 DESPENSA:
+${r.pantryItems.map(p => `• ${p}`).join("\n")}
+
+👨‍🍳 PREPARACIÓN:
+${r.instructions.map((s, i) => `${i + 1}. ${s}`).join("\n")}
+
+💡 CONSEJO DEL CHEF:
+${r.chefTip}
+
+🌱 INFORMACIÓN SALUDABLE:
+• ${r.nutritionHighlights.proteinInfo}
+• ${r.nutritionHighlights.carbsSugarInfo}
+• ${r.nutritionHighlights.sodiumInfo}`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("¡Receta copiada al portapapeles!");
+      });
+    }
+
+    // Favorites view logic
+    function renderFavoritesList() {
+      const container = document.getElementById("favorites-list-container");
+      const searchInput = document.getElementById("favorites-search-input");
+      const query = (searchInput ? searchInput.value : "").toLowerCase().trim();
+
+      if (!container) return;
+
+      const filtered = favoriteRecipes.filter(r => {
+        return r.title.toLowerCase().includes(query) ||
+               r.summary.toLowerCase().includes(query) ||
+               r.ingredientsUsed.some(i => i.toLowerCase().includes(query));
+      });
+
+      if (favoriteRecipes.length === 0) {
+        container.className = "block max-w-lg mx-auto";
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 text-center border border-stone-200 shadow-sm">
+            <div class="text-3xl mb-3">❤️</div>
+            <h3 class="text-base font-bold text-stone-900 font-serif mb-1">Aún no tienes recetas favoritas</h3>
+            <p class="text-xs text-stone-500 mb-5">Genera una receta con tus ingredientes y presiona "Guardar favorita".</p>
+            <button
+              type="button"
+              onclick="switchTab('generator')"
+              class="px-5 py-2.5 bg-stone-900 text-white rounded-xl text-xs font-semibold hover:bg-stone-800"
+            >
+              Generar mi primera receta
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.className = "grid grid-cols-1 md:grid-cols-2 gap-4";
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-2 bg-white rounded-2xl p-6 text-center text-xs text-stone-500 border border-stone-200">
+            No se encontraron recetas con "${escapeHtml(query)}".
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(r => `
+        <div class="bg-white rounded-2xl p-5 border border-stone-200 hover:border-stone-300 hover:shadow-sm transition-all flex flex-col justify-between">
+          <div>
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                Alta proteína • Baja en sal
+              </span>
+              <button
+                type="button"
+                onclick="removeFavoriteById('${r.id}')"
+                class="text-stone-400 hover:text-rose-500 p-1 rounded hover:bg-rose-50 text-xs transition-colors"
+                title="Eliminar"
+              >
+                🗑️
+              </button>
+            </div>
+
+            <h3 class="font-bold text-stone-900 font-serif text-base mb-1 cursor-pointer hover:text-emerald-800" onclick="viewSavedFavorite('${r.id}')">
+              ${escapeHtml(r.title)}
+            </h3>
+
+            <p class="text-xs text-stone-600 line-clamp-2 mb-3 leading-relaxed">
+              ${escapeHtml(r.summary)}
+            </p>
+          </div>
+
+          <div class="pt-3 border-t border-stone-100 flex items-center justify-between text-xs">
+            <span class="text-stone-400 text-[11px]">⏱ ${r.prepTime}</span>
+            <button
+              type="button"
+              onclick="viewSavedFavorite('${r.id}')"
+              class="font-semibold text-emerald-700 hover:text-emerald-900 text-xs flex items-center gap-1"
+            >
+              Ver receta completa &rarr;
+            </button>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function viewSavedFavorite(id) {
+      const rec = favoriteRecipes.find(f => f.id === id);
+      if (rec) {
+        currentRecipe = rec;
+        checkedIngredientsMap = {};
+        checkedStepsMap = {};
+        switchTab("generator");
+        renderRecipeCard(rec);
+        document.getElementById("recipe-display-area")?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+
+    function removeFavoriteById(id) {
+      favoriteRecipes = favoriteRecipes.filter(f => f.id !== id);
+      saveFavoritesToStorage();
+      renderFavoritesList();
+      if (currentRecipe && currentRecipe.id === id) {
+        renderRecipeCard(currentRecipe);
+      }
+      showToast("Receta eliminada de favoritas");
+    }
+
+    function capitalize(str) {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function escapeHtml(string) {
+      const entityMap = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return String(string).replace(/[&<>"']/g, s => entityMap[s]);
+    }
+  </script>
+</body>
+</html>
